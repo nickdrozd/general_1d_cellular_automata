@@ -16,24 +16,32 @@
 
 // rule parameters
 
-var colors = 5;
-var range = 4;
-var ruleNumber = 9283745902837; // decimal int
+// var colors = 5;
+// var range = 4;
+// var ruleNumber = 9283745902837; // decimal int
 
-// var colors = 2;
-// var range = 1;
-// var ruleNumber = 110;
+var colors = 2;
+var range = 1;
+var ruleNumber = 110;
 
 // draw parameters
 
-var emptyColor = '220088'; // hex string
+/* 
+	* hex color format: #RRGGBB
+	* ff is "high intensity", 00 is "low intensity"
+	* #000000 is black (low on all colors)
+	* #fffffff is white (high on all colors)
+*/
+
+var emptyColor = '8800ff'; // hex string
+
 var cellSize = 5; // must be > 2
 var frame = 10;
 
 /* initial coloring scheme: 
 	'random' or 'single' or 'column' */
 
-var initColorScheme = 'random';
+var initColorScheme = 'single';
 var seedingProb = 10;
 
 /* edge condition: 'wrap' or 'dead' */
@@ -48,6 +56,9 @@ var neighborhood; // (2 * range) + 1
 var numberOfStates; // colors ^ neighborhood
 var listOfStates; // in colors-ary representation
 var ruleString; // ruleNumber in colors-ary
+
+const rgbMax = 255;
+const hexMax = Math.pow(rgbMax, 3); // = 16777215
 
 /* drawing */
 
@@ -86,7 +97,8 @@ function draw() {
 		});
 		count = 0;
 
-		loopThroughRules();
+		// loopThroughRules();
+		// loopThroughColors();
 
 		// report();
 	}
@@ -101,6 +113,21 @@ function loopThroughRules() {
 
 	if (INFO)
 		console.log(`rule: ${ruleNumber}`);
+
+	return ruleNumber;
+}
+
+function loopThroughColors() {
+	const parsed = parseInt(emptyColor, 16);
+	const degree = 1000000;
+	const change = Math.floor(Math.random() * degree);
+	const raised = (parsed + change) % hexMax;
+	const hexxed = raised.toString(16);
+
+	if (INFO)
+		console.log(emptyColor);
+
+	return emptyColor = hexxed;
 }
 
 function initialize() {
@@ -127,6 +154,10 @@ function Cell (column, row, color) {
 
 function initializeCells() {
 	return cells = initialCells();
+}
+
+function updateCells() {
+	return cells = updatedCells();
 }
 
 function initialCells() {
@@ -174,10 +205,6 @@ function initialCells() {
 	})
 
 	return cells;
-}
-
-function updateCells() {
-	return cells = updatedCells();
 }
 
 function updatedCells() {
@@ -253,18 +280,6 @@ function newColor(cell) {
 }
 
 function newHexColor(color) { 
-	/* 
-		* hex color format: #RRGGBB
-		* ff is "high intensity", 00 is "low intensity"
-		* #000000 is black (low on all colors)
-		* #fffffff is white (high on all colors)
-	*/
-
-	// magic numbers
-	const hexMax = 16777215;
-	const rgbMax = 255;
-	const hexLen = 6;
-
 	// const hexDiff = hexMax / (colors - 1);
 	const hexDiff = Math.floor(hexMax / colors);
 	const emptyColorStr = emptyColor;
@@ -273,13 +288,8 @@ function newHexColor(color) {
 	if (color == 0)
 		return '#' + emptyColorStr;
 
-	 // debugger;
-
 	const emptyColorVal = 
 		parseInt(emptyColorStr, (16));
-
-	// const hexVal = 
-	// 	(hexDiff * color);
 
 	const hexVal = 
 		(emptyColorVal + (hexDiff * color)) % hexMax;
