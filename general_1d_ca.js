@@ -1,12 +1,12 @@
-var colors = 3;
-var range = 1;
-var ruleNumber = parseInt('201101010' +
-						  '101000102' +
-						  '202102110',3); // parseInt(num,base)
-var seedingProb = 2;
+const colors = 3;
+const range = 1;
+const ruleNumber = 901873456;
+
+const seedingProb = 2;
 
 /*
 	interesting examples: (colors,range,ruleNumber)
+	(3,1, 901873455) // lucky guess! try its neighbors!
 	(2, 2, 4294967296 / 2 + 9)
 	(3, 1, 7.6255975e12 / 3 + 23)
 	(3, 1, parseInt('022101210121201210212111210', 3)
@@ -15,26 +15,27 @@ var seedingProb = 2;
 	(3, 1, parseInt('012012210'+'101101110'+'011202210', 3)) <-- rule 110?
 */
 
-var neighborhood = 2 * range + 1;
-var numberOfStates = Math.pow(colors, neighborhood);
-var listOfStates = possibleStates();
+const neighborhood = 2 * range + 1;
+const numberOfStates = Math.pow(colors, neighborhood);
+const listOfStates = possibleStates();
+const ruleString = convertNumber(ruleNumber);
 
 /****************/
 
-var cellSize = 2;
-var frame = 3;
+const cellSize = 5;
+const frame = 10;
 
-var screenWidth = screen.availWidth;
-var screenHeight = screen.availHeight;
+const screenWidth = screen.availWidth;
+const screenHeight = screen.availHeight;
 
-var rows = Math.round((screenHeight / cellSize));
-var columns = Math.round((screenWidth / cellSize));
+const rows = Math.round((screenHeight / cellSize));
+const columns = Math.round((screenWidth / cellSize));
 
 function setup() {
 	createCanvas(screenWidth,screenHeight);
 	background(100);
-	//frameRate(frame);
-	//noLoop();
+	// frameRate(frame);
+	// noLoop()
 }
 
 var cells = initialCells();
@@ -56,6 +57,7 @@ function draw() {
 			cell.row = 0;
 		});
 		count = 0;
+		report();
 	}
 }
 
@@ -163,17 +165,19 @@ function newNeighbors(cell, cells) {
 }
 
 // number in range(0,colors)
-function newColor(cell) {
+function newColor(cell) { if (DEBUG) debugger;
 	
-	var neighbors = cell.neighbors.join('');
+	const neighbors = cell.neighbors.join('');
 
-	var index = 0;
-	while (listOfStates[index] != neighbors)
-		index++;
+	const start = seedingProb > 50;
+	var index = start ? 0 : listOfStates.length - 1;
+	while (listOfStates[index] != neighbors) {
+		start ? index++ : index--;
+	}
 
-	var rule = convertNumber(ruleNumber);
+	// var rule = convertNumber(ruleNumber);
 
-	return Number(rule[index]);
+	return Number(ruleString[index]);
 }
 
 // decimal number
@@ -181,7 +185,7 @@ function newFillColor(cell) {
 	if (cell.color == 0)
 		return 0;
 	else
-		return 255 / (colors - 1) * cell.color;
+		return 254 / (colors - 1) * cell.color;
 }
 
 // hex string
@@ -192,7 +196,7 @@ function newHexColor(cell) {
 	else
 		code = 16777216 / (colors - 1) * cell.color;
 
-	//code = (code + 20) % 16777216;
+	// code = (code + 20) % 16777216;
 
 	var code = code.toString(16);
 	while (code.length < 6)
@@ -246,4 +250,24 @@ function possibleStates() {
 	}
 
 	return states;
+}
+
+/* debugging */
+
+var DEBUG = 0;
+
+function debug() {
+	DEBUG = 1 - DEBUG;
+}
+
+/* performance monitoring */
+
+var MONITOR = 0;
+var monitor = 0;
+
+function report() {
+	if (MONITOR) {
+		console.log(monitor);
+		monitor = 0;
+	}
 }
