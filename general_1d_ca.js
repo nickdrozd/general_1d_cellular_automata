@@ -14,9 +14,13 @@
 
 // rule parameters
 
-var colors = 3;
-var range = 4;
-var ruleNumber = 3458304957;
+// var colors = 3;
+// var range = 4;
+// var ruleNumber = 3458304957;
+
+var colors = 2;
+var range = 1;
+var ruleNumber = 0;
 
 // draw parameters
 
@@ -33,12 +37,14 @@ var initColorScheme = 'random';
 
 var edgeCondition = 'wrap';
 
-// derived constants
 
-var neighborhood = 2 * range + 1;
-var numberOfStates = Math.pow(colors, neighborhood);
-var listOfStates = possibleStates();
-var ruleString = convertNumber(ruleNumber);
+
+/* derived constants */
+
+var neighborhood; // (2 * range) + 1
+var numberOfStates; // colors ^ neighborhood
+var listOfStates; // in colors-ary representation
+var ruleString; // ruleNumber in colors-ary
 
 /* drawing */
 
@@ -55,7 +61,10 @@ function setup() {
 	// noLoop()
 }
 
-var cells = initialCells();
+var cells;
+
+initialize();
+
 var count = 0;
 
 function draw() {
@@ -74,8 +83,20 @@ function draw() {
 			cell.row = -1; // row will get incremented
 		});
 		count = 0;
+
+		// alter constants
+		ruleNumber++;
+
+		// reinitialize after altering constants
+		initialize()
+
 		report();
 	}
+}
+
+function initialize() {
+	updateConstants();
+	cells = initialCells();
 }
 
 /* cells */
@@ -86,7 +107,6 @@ function Cell (column, row, color) {
 	this.row = row;
 	this.y = row * cellSize
 	this.color = color;
-	//this.historyTotal = 0;
 
 	this.hexColor = '#000000';
 
@@ -95,41 +115,40 @@ function Cell (column, row, color) {
 	this.neighbors = [];
 }
 
-// choose initial coloring
 function initialCells() {
+	// is there a better way to do this?
 	var cells = [];
-
 	for (var i = 0; i < columns; i++) 
 		cells.push(new Cell(i,0,0));
 
 	/* Choose one of the three initial colorings! */
 
-	// random initial coloring
-	if (initColorScheme == 'random') {
-		const rand = Math.random;
-		cells.forEach(function(cell) {
-			if (seedingProb <= rand() * 100)
-				cell.color = 0;
-			else
-				cell.color = 
-					Math.floor(rand() * colors);
-		})
-	}
+		// random initial coloring
+		if (initColorScheme == 'random') {
+			const rand = Math.random;
+			cells.forEach(function(cell) {
+				if (seedingProb <= rand() * 100)
+					cell.color = 0;
+				else
+					cell.color = 
+						Math.floor(rand() * colors);
+			})
+		}
 
-	// single cell in the middle (which color?)
-	if (initColorScheme == 'single') {
-		const middle = Math.round(columns / 2);
-		const initialColor = colors - 1;
+		// single cell in the middle (which color?)
+		if (initColorScheme == 'single') {
+			const middle = Math.round(columns / 2);
+			const initialColor = colors - 1;
 
-		cells[middle].color = initialColor;
-	}
+			cells[middle].color = initialColor;
+		}
 
-	// coloring corresponds to column
-	if (initColorScheme == 'column') {
-		cells.forEach(function(cell) {
-			cell.color = cell.column % colors;
-		})
-	}
+		// coloring corresponds to column
+		if (initColorScheme == 'column') {
+			cells.forEach(function(cell) {
+				cell.color = cell.column % colors;
+			})
+		}
 
 	// update neighbors in light of coloring
 	cells.forEach(function(cell){
@@ -147,20 +166,18 @@ function updatedCells(cells) {
 
 	// update information
 	cells.forEach(function(cell) {
-		newCells.push(new Cell(cell.column, cell.row + 1,
+		newCells.push(new Cell(cell.column, 
+								cell.row + 1,
 								newColor(cell)));
 	});
 
 	// update in light of new color
 	// use forEach?
-	for (var i = 0; i < columns; i++) {
-		newCells[i].neighbors =
-					newNeighbors(cells[i], newCells);
-		newCells[i].hexColor = newHexColor(cells[i]);
-		/*newCells[i].historyTotal =
-							cells[i].historyTotal +
-							cells[i].color;*/
-	}
+	newCells.forEach(function(cell) {
+		cell.neighbors = 
+			newNeighbors(cell, newCells);
+		cell.hexColor = newHexColor(cell);
+	})
 
 	return newCells;
 }
@@ -204,6 +221,11 @@ function newNeighbors(cell, cells) {
 function newColor(cell) { 
 	const neighbors = cell.neighbors.join('');
 
+	/* states are listed from 'greatest' to 'least', 
+	so start counting from the 'bottom' or the 'top' 
+	according as whether there are expected to be 
+	fewer or more 'zeros' */
+
 	const start = seedingProb > 50;
 	var index = start ? 0 : listOfStates.length - 1;
 
@@ -233,35 +255,23 @@ function newHexColor(cell) {
 /* mathy stuff */
 
 function updateConstants() {
-	neighborhood = findNeighborhood();
-	numberOfStates = findNumberOfStates();
-	listOfStates = possibleStates();
-	ruleString = convertNumber(ruleNumber);
+	setNeighborhood();
+	setNumberOfStates();
+	setListOfStates();
+	setRuleString();
 }
 
-function findNeighborhood() {
-	return 2 * range + 1;
+function setNeighborhood() {
+	return neighborhood = 
+				2 * range + 1;
 }
 
-function findNumberOfStates() {
-	Math.pow(colors, neighborhood);
+function setNumberOfStates() {
+	return numberOfStates = 
+		Math.pow(colors, neighborhood);
 }
 
-// convert the rule number to colors-ary representation string
-function convertNumber (number) {
-
-	var numstr = number.toString(colors);
-
-	while (numstr.length < numberOfStates)
-		numstr = '0' + numstr;
-
-	while (numstr.length > numberOfStates)
-		numstr = numstr.slice(1);
-
-	return numstr;
-}
-
-function possibleStates() {
+function setListOfStates() {
 	var states = [];
 
 	for (var i = 0, state = numberOfStates - 1;
@@ -272,7 +282,25 @@ function possibleStates() {
 			states[i] = '0' + states[i];
 	}
 
-	return states;
+	return listOfStates = states;
+}
+
+function setRuleString() {
+	return ruleString = convertRuleNumber();
+}
+
+// convert the rule number to colors-ary representation string
+function convertRuleNumber() {
+
+	var numstr = ruleNumber.toString(colors);
+
+	while (numstr.length < numberOfStates)
+		numstr = '0' + numstr;
+
+	while (numstr.length > numberOfStates)
+		numstr = numstr.slice(1);
+
+	return numstr;
 }
 
 /* debugging */
