@@ -10,36 +10,39 @@
 	(3, 1, parseInt('012012210'+'101101110'+'011202210', 3)) <-- rule 110?
 */
 
-/* input */
+/**************************************/
+
+/* input parameters */
 
 // rule parameters
 
-// var colors = 3;
-// var range = 4;
-// var ruleNumber = 3458304957;
+var colors = 5;
+var range = 4;
+var ruleNumber = 9283745902837; // decimal int
 
-var colors = 2;
-var range = 1;
-var ruleNumber = 110;
+// var colors = 2;
+// var range = 1;
+// var ruleNumber = 110;
 
 // draw parameters
 
-var seedingProb = 2;
-var cellSize = 5;
+var emptyColor = '220088'; // hex string
+var cellSize = 5; // must be > 2
 var frame = 10;
 
 /* initial coloring scheme: 
 	'random' or 'single' or 'column' */
 
 var initColorScheme = 'random';
+var seedingProb = 10;
 
 /* edge condition: 'wrap' or 'dead' */
 
 var edgeCondition = 'wrap';
 
+/**************************************/
 
-
-/* derived constants */
+/* derived constants (initialize with setConstants) */
 
 var neighborhood; // (2 * range) + 1
 var numberOfStates; // colors ^ neighborhood
@@ -68,7 +71,6 @@ initialize();
 var count = 0;
 
 function draw() {
-
 	cells.forEach(function(cell) {
 		fill(color(cell.hexColor));
 		rect(cell.x, cell.y, cellSize, cellSize);
@@ -76,7 +78,7 @@ function draw() {
 
 	count++;
 
-	cells = updatedCells(cells);
+	updateCells();
 
 	if (count > rows) {
 		cells.forEach(function(cell) {
@@ -84,19 +86,27 @@ function draw() {
 		});
 		count = 0;
 
-		// alter constants
-		// ruleNumber++;
+		loopThroughRules();
 
-		// reinitialize after altering constants
-		// initialize()
-
-		report();
+		// report();
 	}
 }
 
+function loopThroughRules() {
+	ruleNumber++;
+
+	// reinitialize after altering ruleNumber
+	setRuleString();
+	initializeCells();
+
+	if (INFO)
+		console.log(`rule: ${ruleNumber}`);
+}
+
 function initialize() {
-	updateConstants();
-	cells = initialCells();
+	monitor = 0;
+	setConstants();
+	initializeCells();
 }
 
 /* cells */
@@ -115,9 +125,13 @@ function Cell (column, row, color) {
 	this.neighbors = [];
 }
 
+function initializeCells() {
+	return cells = initialCells();
+}
+
 function initialCells() {
 	// is there a better way to do this?
-	var cells = [];
+	const cells = [];
 	for (var i = 0; i < columns; i++) 
 		cells.push(new Cell(i,0,0));
 
@@ -126,6 +140,7 @@ function initialCells() {
 		// random initial coloring
 		if (initColorScheme == 'random') {
 			const rand = Math.random;
+
 			cells.forEach(function(cell) {
 				if (seedingProb <= rand() * 100)
 					cell.color = 0;
@@ -139,8 +154,9 @@ function initialCells() {
 		if (initColorScheme == 'single') {
 			const middle = Math.round(columns / 2);
 			const initialColor = colors - 1;
+			const middleCell = cells[middle];
 
-			cells[middle].color = initialColor;
+			middleCell.color = initialColor;
 		}
 
 		// coloring corresponds to column
@@ -151,17 +167,20 @@ function initialCells() {
 		}
 
 	// update neighbors in light of coloring
-	cells.forEach(function(cell){
+	cells.forEach(function(cell) {
 		cell.neighbors = 
 			newNeighbors(cell, cells);
-		cell.hexColor = newHexColor(cell);
+		cell.hexColor = newHexColor(cell.color);
 	})
 
 	return cells;
 }
 
-function updatedCells(cells) {
+function updateCells() {
+	return cells = updatedCells();
+}
 
+function updatedCells() {
 	var newCells = [];
 
 	// update information
@@ -171,12 +190,11 @@ function updatedCells(cells) {
 								newColor(cell)));
 	});
 
-	// update in light of new color
-	// use forEach?
+	// update other info in light of new color
 	newCells.forEach(function(cell) {
 		cell.neighbors = 
 			newNeighbors(cell, newCells);
-		cell.hexColor = newHexColor(cell);
+		cell.hexColor = newHexColor(cell.color);
 	})
 
 	return newCells;
@@ -234,25 +252,46 @@ function newColor(cell) {
 	return Number(color);
 }
 
-// hex string
-function newHexColor(cell) {
-	var code;
-	if (cell.color == 0)
-		code = 255;
-	else
-		code = 16777216 / (colors - 1) * cell.color;
+function newHexColor(color) { 
+	/* 
+		* hex color format: #RRGGBB
+		* ff is "high intensity", 00 is "low intensity"
+		* #000000 is black (low on all colors)
+		* #fffffff is white (high on all colors)
+	*/
 
-	// code = (code + 20) % 16777216;
+	// magic numbers
+	const hexMax = 16777215;
+	const rgbMax = 255;
+	const hexLen = 6;
 
-	var code = code.toString(16);
-	while (code.length < 6)
-		code = '0' + code;
-	return '#' + code;
+	// const hexDiff = hexMax / (colors - 1);
+	const hexDiff = Math.floor(hexMax / colors);
+	const emptyColorStr = emptyColor;
+
+	// background / empty color
+	if (color == 0)
+		return '#' + emptyColorStr;
+
+	 // debugger;
+
+	const emptyColorVal = 
+		parseInt(emptyColorStr, (16));
+
+	// const hexVal = 
+	// 	(hexDiff * color);
+
+	const hexVal = 
+		(emptyColorVal + (hexDiff * color)) % hexMax;
+
+	const hexStr = hexVal.toString(16);
+
+	return '#' + hexStr;
 }
 
-/* mathy stuff */
+/* rules and states */
 
-function updateConstants() {
+function setConstants() {
 	setNeighborhood();
 	setNumberOfStates();
 	setListOfStates();
@@ -274,7 +313,8 @@ function setListOfStates() {
 	var states = [];
 
 	for (var i = 0, state = numberOfStates - 1;
-				i < numberOfStates; i++, state--) {
+				i < numberOfStates; 
+				i++, state--) {
 		states[i] = state.toString(colors);
 
 		while (states[i].length < neighborhood)
@@ -284,14 +324,11 @@ function setListOfStates() {
 	return listOfStates = states;
 }
 
+// convert ruleNumber to colors-ary representation string
 function setRuleString() {
-	return ruleString = convertRuleNumber();
-}
-
-// convert the rule number to colors-ary representation string
-function convertRuleNumber() {
-
-	var numstr = ruleNumber.toString(colors);
+	// base-colors
+	var numstr = 
+		ruleNumber.toString(colors);
 
 	// pad out with zeros if needed
 	while (numstr.length < numberOfStates)
@@ -301,7 +338,7 @@ function convertRuleNumber() {
 	while (numstr.length > numberOfStates)
 		numstr = numstr.slice(1);
 
-	return numstr;
+	return ruleString = numstr;
 }
 
 /* debugging */
@@ -314,12 +351,15 @@ function debug() {
 
 /* performance monitoring */
 
-var MONITOR = 0;
-var monitor = 0;
+var INFO = 0;
+
+function info() {
+	INFO = 1 - INFO;
+}
+
+var monitor;
 
 function report() {
-	if (MONITOR) {
-		console.log(monitor);
-		monitor = 0;
-	}
+	console.log(monitor);
+	monitor = 0;
 }
