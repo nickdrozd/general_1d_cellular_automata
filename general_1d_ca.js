@@ -20,7 +20,7 @@
 
 var colors = 2;
 var range = 1;
-var ruleNumber = 0;
+var ruleNumber = 110;
 
 // draw parameters
 
@@ -85,10 +85,10 @@ function draw() {
 		count = 0;
 
 		// alter constants
-		ruleNumber++;
+		// ruleNumber++;
 
 		// reinitialize after altering constants
-		initialize()
+		// initialize()
 
 		report();
 	}
@@ -219,21 +219,19 @@ function newNeighbors(cell, cells) {
 
 // number in range(0,colors)
 function newColor(cell) { 
-	const neighbors = cell.neighbors.join('');
+	const neighborString = 
+		cell.neighbors.join('');
 
-	/* states are listed from 'greatest' to 'least', 
-	so start counting from the 'bottom' or the 'top' 
-	according as whether there are expected to be 
-	fewer or more 'zeros' */
+	const neighborNum = 
+		parseInt(neighborString, colors);
 
-	const start = seedingProb > 50;
-	var index = start ? 0 : listOfStates.length - 1;
+	// states are listed "backwards"
+	const index = 
+		listOfStates.length - 1 - neighborNum;
 
-	while (listOfStates[index] != neighbors) {
-		start ? index++ : index--;
-	}
-
-	return Number(ruleString[index]);
+	const color = ruleString[index];
+ 
+	return Number(color);
 }
 
 // hex string
@@ -271,6 +269,7 @@ function setNumberOfStates() {
 		Math.pow(colors, neighborhood);
 }
 
+// why are these listed "backwards"?
 function setListOfStates() {
 	var states = [];
 
@@ -294,9 +293,11 @@ function convertRuleNumber() {
 
 	var numstr = ruleNumber.toString(colors);
 
+	// pad out with zeros if needed
 	while (numstr.length < numberOfStates)
 		numstr = '0' + numstr;
 
+	// lop off remainder (just in case)
 	while (numstr.length > numberOfStates)
 		numstr = numstr.slice(1);
 
