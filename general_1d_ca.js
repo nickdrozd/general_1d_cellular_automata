@@ -1,6 +1,7 @@
 /*
 	interesting examples: (colors,range,ruleNumber)
-	(3, 4, 3458304957)
+	(13, 2, 82335290282357228)
+	(5, 1, 8233529028753458969)
 	(3, 1, 901873455) // lucky guess! try its neighbors!
 	(2, 2, 4294967296 / 2 + 9)
 	(3, 1, 7.6255975e12 / 3 + 23)
@@ -16,9 +17,13 @@
 
 // rule parameters
 
-var colors = 2;
-var range = 3;
-var ruleNumber = 8233523458969; // decimal int
+var colors = 13;
+var range = 2;
+var ruleNumber = 9203874572280928347; // decimal int
+
+// var colors = 2;
+// var range = 1;
+// var ruleNumber = 110;
 
 // draw parameters
 
@@ -50,7 +55,6 @@ var edgeCondition = 'wrap';
 
 var neighborhood; // (2 * range) + 1
 var numberOfStates; // colors ^ neighborhood
-var listOfStates; // in colors-ary representation
 var ruleString; // ruleNumber in colors-ary
 
 const rgbMax = 255;
@@ -279,13 +283,13 @@ function newNeighbors(cell, cells) {
 }
 
 // number in range(0,colors)
-function newColor(cell) { 
+function newColor(cell) {
 	const neighborNum = 
 		parseInt(cell.neighbors, colors);
 
 	// states are listed "backwards"
 	const index = 
-		listOfStates.length - 1 - neighborNum;
+		numberOfStates - 1 - neighborNum;
 
 	const color = ruleString[index];
  
@@ -297,7 +301,6 @@ function newColor(cell) {
 function setConstants() {
 	setNeighborhood();
 	setNumberOfStates();
-	setListOfStates();
 	setRuleString();
 }
 
@@ -309,26 +312,6 @@ function setNeighborhood() {
 function setNumberOfStates() {
 	return numberOfStates = 
 		Math.pow(colors, neighborhood);
-}
-
-/*
-	<--BOTTLENECK-->
-*/
-
-// why are these listed "backwards"?
-function setListOfStates() {
-	var states = [];
-
-	for (var i = 0, state = numberOfStates - 1;
-				i < numberOfStates; 
-				i++, state--) {
-		states[i] = state.toString(colors);
-
-		while (states[i].length < neighborhood)
-			states[i] = '0' + states[i];
-	}
-
-	return listOfStates = states;
 }
 
 // convert ruleNumber to colors-ary representation string
