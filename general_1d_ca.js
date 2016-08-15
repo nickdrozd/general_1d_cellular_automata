@@ -16,13 +16,9 @@
 
 // rule parameters
 
-var colors = 3;
-var range = 5;
-var ruleNumber = 5924569387; // decimal int
-
-// var colors = 2;
-// var range = 1;
-// var ruleNumber = 110;
+var colors = 2;
+var range = 3;
+var ruleNumber = 8233523458969; // decimal int
 
 // draw parameters
 
@@ -33,7 +29,7 @@ var ruleNumber = 5924569387; // decimal int
 	* #fffffff is white (high on all colors)
 */
 
-var emptyColor = '000056'; // hex string
+var emptyColor = '9922aa'; // hex string
 
 var cellSize = 5; // must be > 2
 var frame = 10;
@@ -41,7 +37,7 @@ var frame = 10;
 /* initial coloring scheme: 
 	'random' or 'single' or 'column' */
 
-var initColorScheme = 'single';
+var initColorScheme = 'random';
 var seedingProb = 10;
 
 /* edge condition: 'wrap' or 'dead' */
@@ -62,12 +58,13 @@ const hexMax = Math.pow(rgbMax + 1, 3) - 1; // = 16777215
 
 /* drawing */
 
-const screenWidth = screen.availWidth * .49;
-const screenHeight = screen.availHeight * .88;
+const screenWidth = screen.availWidth; // * .49;
+const screenHeight = screen.availHeight; // * .88;
 
 const rows = Math.round((screenHeight / cellSize));
 const columns = Math.round((screenWidth / cellSize));
 
+// basic P5 setup
 function setup() {
 	createCanvas(screenWidth,screenHeight);
 	background(100);
@@ -81,16 +78,25 @@ initialize();
 
 var count = 0;
 
+/* fill and rect are the only real P5 functions 
+	in this entire program */
 function draw() {
 	cells.forEach(function(cell) {
-		fill(color(cell.hexColor));
-		rect(cell.x, cell.y, cellSize, cellSize);
+		const x_co = getCoordinate(cell.column);
+		const y_co = getCoordinate(cell.row);
+		const hexColor = 
+			convertToHexColor(cell.color);
+
+		// P5 functions
+		fill(hexColor);
+		rect(x_co, y_co, cellSize, cellSize);
 	});
 
 	count++;
 
 	updateCells();
 
+	// reset rows at the bottom of the page
 	if (count > rows) {
 		cells.forEach(function(cell) {
 			cell.row = -1; // row will get incremented
@@ -101,7 +107,7 @@ function draw() {
 		// loopThroughRules();
 		// loopThroughColors();
 
-		report();
+		// report();
 	}
 }
 
@@ -120,7 +126,7 @@ function loopThroughRules() {
 
 function loopThroughColors() {
 	const parsed = parseInt(emptyColor, 16);
-	const degree = 10000000;
+	const degree = 10000000; // input variable?
 	const change = Math.floor(Math.random() * degree);
 	const raised = (parsed + change) % hexMax;
 	const hexxed = raised.toString(16);
@@ -129,6 +135,10 @@ function loopThroughColors() {
 		console.log(emptyColor);
 
 	return emptyColor = hexxed;
+}
+
+function getCoordinate(place) {
+	return place * cellSize;
 }
 
 function initialize() {
@@ -141,15 +151,10 @@ function initialize() {
 
 function Cell (column, row, color) {
 	this.column = column;
-	this.x = column * cellSize;
 	this.row = row;
-	this.y = row * cellSize
 	this.color = color;
 
-	this.hexColor = '#000000';
-
-	// the colors of the cells neighbors (including itself)
-	// this gets converted to a string later -- should it be a string now?
+	// the colors of the cell and its neighbors
 	this.neighbors = 0;
 }
 
@@ -203,7 +208,6 @@ function initialCells() {
 	cells.forEach(function(cell) {
 		cell.neighbors = 
 			newNeighbors(cell, cells);
-		cell.hexColor = newHexColor(cell.color);
 	})
 
 	return cells;
@@ -223,7 +227,6 @@ function updatedCells() {
 	newCells.forEach(function(cell) {
 		cell.neighbors = 
 			newNeighbors(cell, newCells);
-		cell.hexColor = newHexColor(cell.color);
 	})
 
 	return newCells;
@@ -243,9 +246,11 @@ function newNeighbors(cell, cells) {
 	// option 1: wrap around
 	if (edgeCondition == 'wrap') {
 		for (var i = start; i < stop; i++) {
+			// past left edge
 			if (i < 0) 
 				color = cells[length + i].color;
 
+			// past right edge
 			else if (i >= length) 
 				color = cells[i % length].color;
 
@@ -259,6 +264,7 @@ function newNeighbors(cell, cells) {
 	// option 2: anything off the screen is 0
 	if (edgeCondition == 'dead') {
 		for (var i = start; i < stop; i++) {
+			// past either edge
 			if (i < 0 || i >= length)
 				color = 0;
 
@@ -286,27 +292,7 @@ function newColor(cell) {
 	return Number(color);
 }
 
-function newHexColor(color) { 
-	// const hexDiff = hexMax / (colors - 1);
-	const hexDiff = Math.floor(hexMax / colors);
-	const emptyColorStr = emptyColor;
-
-	// background / empty color
-	if (color == 0)
-		return '#' + emptyColorStr;
-
-	const emptyColorVal = 
-		parseInt(emptyColorStr, (16));
-
-	const hexVal = 
-		(emptyColorVal + (hexDiff * color)) % hexMax;
-
-	const hexStr = hexVal.toString(16);
-
-	return '#' + hexStr;
-}
-
-/* rules and states */
+/* rules, states, conversions */
 
 function setConstants() {
 	setNeighborhood();
@@ -326,7 +312,7 @@ function setNumberOfStates() {
 }
 
 /*
-	BOTTLENECK
+	<--BOTTLENECK-->
 */
 
 // why are these listed "backwards"?
@@ -360,6 +346,25 @@ function setRuleString() {
 		numstr = numstr.slice(1);
 
 	return ruleString = numstr;
+}
+
+function convertToHexColor(color) { 
+	const hexDiff = Math.floor(hexMax / colors);
+	const emptyColorStr = emptyColor;
+
+	// background / empty color
+	if (color == 0)
+		return '#' + emptyColorStr;
+
+	const emptyColorVal = 
+		parseInt(emptyColorStr, (16));
+
+	const hexVal = 
+		(emptyColorVal + (hexDiff * color)) % hexMax;
+
+	const hexStr = hexVal.toString(16);
+
+	return '#' + hexStr;
 }
 
 /* debugging */
