@@ -16,13 +16,13 @@
 
 // rule parameters
 
-// var colors = 5;
-// var range = 4;
-// var ruleNumber = 9283745902837; // decimal int
+var colors = 3;
+var range = 5;
+var ruleNumber = 5924569387; // decimal int
 
-var colors = 2;
-var range = 1;
-var ruleNumber = 110;
+// var colors = 2;
+// var range = 1;
+// var ruleNumber = 110;
 
 // draw parameters
 
@@ -33,7 +33,7 @@ var ruleNumber = 110;
 	* #fffffff is white (high on all colors)
 */
 
-var emptyColor = '8800ff'; // hex string
+var emptyColor = '000056'; // hex string
 
 var cellSize = 5; // must be > 2
 var frame = 10;
@@ -58,12 +58,12 @@ var listOfStates; // in colors-ary representation
 var ruleString; // ruleNumber in colors-ary
 
 const rgbMax = 255;
-const hexMax = Math.pow(rgbMax, 3); // = 16777215
+const hexMax = Math.pow(rgbMax + 1, 3) - 1; // = 16777215
 
 /* drawing */
 
-const screenWidth = screen.availWidth;
-const screenHeight = screen.availHeight;
+const screenWidth = screen.availWidth * .49;
+const screenHeight = screen.availHeight * .88;
 
 const rows = Math.round((screenHeight / cellSize));
 const columns = Math.round((screenWidth / cellSize));
@@ -95,12 +95,13 @@ function draw() {
 		cells.forEach(function(cell) {
 			cell.row = -1; // row will get incremented
 		});
+
 		count = 0;
 
 		// loopThroughRules();
 		// loopThroughColors();
 
-		// report();
+		report();
 	}
 }
 
@@ -119,7 +120,7 @@ function loopThroughRules() {
 
 function loopThroughColors() {
 	const parsed = parseInt(emptyColor, 16);
-	const degree = 1000000;
+	const degree = 10000000;
 	const change = Math.floor(Math.random() * degree);
 	const raised = (parsed + change) % hexMax;
 	const hexxed = raised.toString(16);
@@ -149,7 +150,7 @@ function Cell (column, row, color) {
 
 	// the colors of the cells neighbors (including itself)
 	// this gets converted to a string later -- should it be a string now?
-	this.neighbors = [];
+	this.neighbors = 0;
 }
 
 function initializeCells() {
@@ -157,6 +158,7 @@ function initializeCells() {
 }
 
 function updateCells() {
+	// loopThroughColors();
 	return cells = updatedCells();
 }
 
@@ -228,47 +230,52 @@ function updatedCells() {
 }
 
 function newNeighbors(cell, cells) {
-	var neighborList = [];
+	var neighborString = '';
 
-	var start = cell.column - range;
-	var stop = start + neighborhood;
+	const start = cell.column - range;
+	const stop = start + neighborhood;
+	const length = cells.length;
 
 	// edge conditions
 
+	var color;
+
 	// option 1: wrap around
 	if (edgeCondition == 'wrap') {
-		for (var i = start, j = 0; i < stop; i++, j++) {
-			if (i < 0)
-				neighborList[j] = 
-					cells[cells.length + i].color;
-			else if (i >= cells.length)
-				neighborList[j] = 
-					cells[i % cells.length].color;
-			else
-				neighborList[j] = cells[i].color;
+		for (var i = start; i < stop; i++) {
+			if (i < 0) 
+				color = cells[length + i].color;
+
+			else if (i >= length) 
+				color = cells[i % length].color;
+
+			else 
+				color = cells[i].color;
+
+			neighborString += color;
 		}
 	}
 
 	// option 2: anything off the screen is 0
 	if (edgeCondition == 'dead') {
-		for (var i = start, j = 0; i < stop; i++, j++) {
-				if (i < 0 || i >= cells.length)
-					neighborList[j] = 0;
-				else
-					neighborList[j] = cells[i].color;
+		for (var i = start; i < stop; i++) {
+			if (i < 0 || i >= length)
+				color = 0;
+
+			else
+				color = cells[i].color;
+
+			neighborString += color;
 		}
 	}
 
-	return neighborList;
+	return neighborString;
 }
 
 // number in range(0,colors)
 function newColor(cell) { 
-	const neighborString = 
-		cell.neighbors.join('');
-
 	const neighborNum = 
-		parseInt(neighborString, colors);
+		parseInt(cell.neighbors, colors);
 
 	// states are listed "backwards"
 	const index = 
@@ -317,6 +324,10 @@ function setNumberOfStates() {
 	return numberOfStates = 
 		Math.pow(colors, neighborhood);
 }
+
+/*
+	BOTTLENECK
+*/
 
 // why are these listed "backwards"?
 function setListOfStates() {
