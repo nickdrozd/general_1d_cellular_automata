@@ -1,5 +1,6 @@
 /*
 	interesting examples: (colors,range,ruleNumber)
+	(4, 1, 8745720928353)
 	(13, 2, 82335290282357228)
 	(5, 1, 8233529028753458969)
 	(3, 1, 901873455) // lucky guess! try its neighbors!
@@ -17,13 +18,13 @@
 
 // rule parameters
 
-var colors = 13;
-var range = 2;
-var ruleNumber = 9203874572280928347; // decimal int
+var colors = 7;
+var range = 3;
+var ruleNumber = 4567898765; // decimal int
 
 // var colors = 2;
 // var range = 1;
-// var ruleNumber = 110;
+// var ruleNumber = 30;
 
 // draw parameters
 
@@ -36,7 +37,7 @@ var ruleNumber = 9203874572280928347; // decimal int
 
 var emptyColor = '9922aa'; // hex string
 
-var cellSize = 5; // must be > 2
+var cellSize = 10; // must be > 2
 var frame = 10;
 
 /* initial coloring scheme: 
@@ -71,7 +72,7 @@ const columns = Math.round((screenWidth / cellSize));
 // basic P5 setup
 function setup() {
 	createCanvas(screenWidth,screenHeight);
-	background(100);
+	background(100); // canvas color in grayscale
 	// frameRate(frame);
 	// noLoop()
 }
@@ -86,8 +87,11 @@ var count = 0;
 	in this entire program */
 function draw() {
 	cells.forEach(function(cell) {
-		const x_co = getCoordinate(cell.column);
-		const y_co = getCoordinate(cell.row);
+		const coordinates = 
+			getCoordinates(cell); // array [x_co, y_co]
+		const x_co = coordinates[0];
+		const y_co = coordinates[1];
+
 		const hexColor = 
 			convertToHexColor(cell.color);
 
@@ -108,15 +112,15 @@ function draw() {
 
 		count = 0;
 
-		// loopThroughRules();
-		// loopThroughColors();
+		loopThroughRules();
+		// loopThroughDisplayColors();
 
 		// report();
 	}
 }
 
 function loopThroughRules() {
-	ruleNumber++;
+	gotoNextRuleNumber();
 
 	// reinitialize after altering ruleNumber
 	setRuleString();
@@ -128,21 +132,36 @@ function loopThroughRules() {
 	return ruleNumber;
 }
 
-function loopThroughColors() {
+function gotoNextRuleNumber() {
+	return ruleNumber = ruleNumber + 1;
+}
+
+/* changes the "empty color", ie the display 
+color corresponding to the 0 cell color value */
+function loopThroughDisplayColors() {
 	const parsed = parseInt(emptyColor, 16);
 	const degree = 10000000; // input variable?
 	const change = Math.floor(Math.random() * degree);
 	const raised = (parsed + change) % hexMax;
 	const hexxed = raised.toString(16);
 
+	emptyColor = hexxed;
+
 	if (INFO)
 		console.log(emptyColor);
 
-	return emptyColor = hexxed;
+	return emptyColor;
 }
 
-function getCoordinate(place) {
-	return place * cellSize;
+// returns array [x_co, y_co]
+function getCoordinates(cell) {
+	const col = cell.column;
+	const row = cell.row;
+
+	const x_co = col * cellSize;
+	const y_co = row * cellSize;
+
+	return [x_co, y_co];
 }
 
 function initialize() {
@@ -220,14 +239,14 @@ function initialCells() {
 function updatedCells() {
 	var newCells = [];
 
-	// update information
+	// update color and row
 	cells.forEach(function(cell) {
 		newCells.push(new Cell(cell.column, 
 								cell.row + 1,
 								newColor(cell)));
 	});
 
-	// update other info in light of new color
+	// update neighbors in light of new color
 	newCells.forEach(function(cell) {
 		cell.neighbors = 
 			newNeighbors(cell, newCells);
@@ -298,6 +317,8 @@ function newColor(cell) {
 
 /* rules, states, conversions */
 
+/* is this approach too modular? */
+
 function setConstants() {
 	setNeighborhood();
 	setNumberOfStates();
@@ -306,16 +327,30 @@ function setConstants() {
 
 function setNeighborhood() {
 	return neighborhood = 
-				2 * range + 1;
+		getNeighborhood(range);
 }
 
 function setNumberOfStates() {
 	return numberOfStates = 
-		Math.pow(colors, neighborhood);
+		getNumberOfStates(colors, neighborhood);
 }
 
 // convert ruleNumber to colors-ary representation string
 function setRuleString() {
+	return ruleString = 
+		convertRuleNumber(ruleNumber);
+}
+
+function getNeighborhood(range) {
+	return (2 * range) + 1;
+}
+
+function getNumberOfStates(colors, neighborhood) {
+	return Math.pow(colors, neighborhood);
+}
+
+// convert ruleNumber to colors-ary representation string
+function convertRuleNumber(ruleNumber) {
 	// base-colors
 	var numstr = 
 		ruleNumber.toString(colors);
@@ -328,7 +363,7 @@ function setRuleString() {
 	while (numstr.length > numberOfStates)
 		numstr = numstr.slice(1);
 
-	return ruleString = numstr;
+	return numstr;
 }
 
 function convertToHexColor(color) { 
@@ -356,6 +391,8 @@ var DEBUG = 0;
 
 function debug() {
 	DEBUG = 1 - DEBUG;
+
+	return DEBUG;
 }
 
 /* performance monitoring */
@@ -364,11 +401,13 @@ var INFO = 0;
 
 function info() {
 	INFO = 1 - INFO;
+
+	return INFO;
 }
 
 var monitor;
 
 function report() {
-	console.log(monitor);
+	console.log(`monitor: ${monitor}`);
 	monitor = 0;
 }
